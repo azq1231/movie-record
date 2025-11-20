@@ -1,0 +1,5 @@
+{
+  "name": "SeriesSync - Personal movie Tracker",
+  "description": "A personalized, private dashboard to track your TV series progress independent of shared streaming accounts. Features AI-powered show detail fetching.",
+  "requestFramePermissions": []
+}
