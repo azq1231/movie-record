@@ -3,7 +3,8 @@ import { Show, ShowStatus, UserProfile } from './types';
 import { ShowCard } from './components/ShowCard';
 import { AddShowModal } from './components/AddShowModal';
 import { ProfileSelector } from './components/ProfileSelector';
-import { PlusCircle, Search, Tv, List, LogOut } from 'lucide-react';
+import { ImportExportModal } from './components/ImportExportModal';
+import { PlusCircle, Search, Tv, List, LogOut, Settings } from 'lucide-react';
 
 const PROFILES_KEY = 'series-sync-profiles';
 const OLD_DATA_KEY = 'series-sync-data-v1'; // Legacy key for migration
@@ -16,6 +17,7 @@ function App() {
   // App State (Loaded based on active profile)
   const [shows, setShows] = useState<Show[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [filter, setFilter] = useState<string>('all'); 
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -128,6 +130,21 @@ function App() {
     setShows(prev => [newShow, ...prev]);
   };
 
+  const handleImportShows = (importedShows: Omit<Show, 'id' | 'lastUpdated'>[]) => {
+    if (!activeProfile) return;
+    
+    const newShows: Show[] = importedShows.map(s => ({
+      ...s,
+      id: crypto.randomUUID(),
+      lastUpdated: Date.now()
+    }));
+
+    // Append new shows to existing ones
+    // Note: We are not checking for duplicates strictly by name here to keep it simple,
+    // allowing users to have multiple entries if they really want to, or they can delete dupes.
+    setShows(prev => [...newShows, ...prev]);
+  };
+
   const handleDeleteShow = (id: string) => {
     if (window.confirm('確定要刪除這部劇的進度紀錄嗎？')) {
       setShows(prev => prev.filter(s => s.id !== id));
@@ -228,6 +245,15 @@ function App() {
                  </div>
                </div>
 
+               {/* Import/Export Button */}
+               <button 
+                onClick={() => setIsSettingsOpen(true)}
+                className="text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-800 transition-colors"
+                title="匯入/匯出"
+               >
+                 <Settings size={20} />
+               </button>
+
                <button 
                 onClick={handleLogout}
                 className="text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-800 transition-colors"
@@ -303,12 +329,20 @@ function App() {
             <p className="text-slate-400 max-w-md mb-8">
               嗨 {activeProfile.name}！點擊下方按鈕，立即加入您的第一部劇集進度。
             </p>
-            <button 
-              onClick={() => setIsModalOpen(true)}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3 rounded-xl font-semibold shadow-xl shadow-indigo-500/20 transition-all"
-            >
-              新增劇集
-            </button>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setIsModalOpen(true)}
+                className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3 rounded-xl font-semibold shadow-xl shadow-indigo-500/20 transition-all"
+              >
+                新增劇集
+              </button>
+              <button 
+                onClick={() => setIsSettingsOpen(true)}
+                className="bg-slate-700 hover:bg-slate-600 text-white px-6 py-3 rounded-xl font-semibold transition-all"
+              >
+                匯入清單
+              </button>
+            </div>
           </div>
         ) : (
           <>
@@ -337,6 +371,13 @@ function App() {
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         onAdd={handleAddShow} 
+      />
+
+      <ImportExportModal 
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        shows={shows}
+        onImport={handleImportShows}
       />
     </div>
   );
